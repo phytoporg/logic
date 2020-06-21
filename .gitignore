@@ -33,3 +33,7 @@
 
 # CMake
 build/*
+
+# vim
+*.swp
+*~
