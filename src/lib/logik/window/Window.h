@@ -19,12 +19,13 @@ namespace logik
         ~Window();
 
         void PollEvents();
+        GLFWwindow* GetWindow();
 
     private:
         Window(uint32_t width, uint32_t height, const std::string& title);
         Window(const Window& window) = delete;
 
-        GLFWwindow* m_pWindow;
+        GLFWwindow*  m_pWindow;
 
         friend class Instance;
     };
