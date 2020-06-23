@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace logik
 {
@@ -37,7 +38,16 @@ namespace logik
         VkQueue      m_vkPresentQueue;
         uint32_t     m_presentQueueIndex;
 
-        VkSwapchainKHR m_swapChain;
+        VkSwapchainKHR       m_swapChain;
+        std::vector<VkImage> m_swapChainImages;
+        VkFormat             m_swapChainImageFormat;
+        VkExtent2D           m_swapChainExtent;
+
+        std::vector<VkImageView> m_swapChainImageViews;
+
+        bool CreateGraphicsPipeline();
+        VkShaderModule m_vertShaderModule;
+        VkShaderModule m_fragShaderModule;
     };
 }
 
