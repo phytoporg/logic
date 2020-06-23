@@ -37,3 +37,6 @@ build/*
 # vim
 *.swp
 *~
+
+# Vulkan shaders
+*.spv
