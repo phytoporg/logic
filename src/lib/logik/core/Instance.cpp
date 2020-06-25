@@ -539,9 +539,77 @@ namespace logik
         rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
         //
-        // Configure multisampling
+        // Configure multisampling (disabled)
+        //
+        VkPipelineMultisampleStateCreateInfo multiSamplingInfo{};
+        multiSamplingInfo.sType =
+            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multiSamplingInfo.sampleShadingEnable = VK_FALSE;
+        multiSamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multiSamplingInfo.minSampleShading = 1.0f; // Optional
+        multiSamplingInfo.pSampleMask = nullptr; // Optional
+        multiSamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+        multiSamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
+
+        //
+        // No depth/stencil tests for the moment.
         //
         
+        //
+        // Color blending modes (no blending atm)
+        //
+        VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+        colorBlendAttachment.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT |
+            VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.blendEnable = VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+        VkPipelineColorBlendStateCreateInfo colorBlending{};
+        colorBlending.sType = 
+            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK_FALSE;
+        colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+        colorBlending.attachmentCount = 1;
+        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.blendConstants[0] = 0.0f; // Optional
+        colorBlending.blendConstants[1] = 0.0f; // Optional
+        colorBlending.blendConstants[2] = 0.0f; // Optional
+        colorBlending.blendConstants[3] = 0.0f; // Optional
+
+        //
+        // TODO: This would be a good place to configure a VkDynamicState if 
+        // we were using one.
+        //
+
+        //
+        // Pipeline layout config
+        //
+
+        VkPipelineLayout pipelineLayout;
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = 0; // Optional
+        pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+        if (vkCreatePipelineLayout(
+            m_vkLogicalDevice,
+            &pipelineLayoutInfo,
+            nullptr,
+            &pipelineLayout) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("Failed to create pipeline layout!");
+        }
+
         // TODO: 
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
 
