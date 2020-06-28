@@ -48,6 +48,10 @@ namespace logik
         bool CreateGraphicsPipeline();
         VkShaderModule m_vertShaderModule;
         VkShaderModule m_fragShaderModule;
+
+        VkRenderPass     m_renderPass;
+        VkPipelineLayout m_pipelineLayout;
+        VkPipeline       m_graphicsPipeline;
     };
 }
 
