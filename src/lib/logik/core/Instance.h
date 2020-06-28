@@ -52,6 +52,8 @@ namespace logik
         VkRenderPass     m_renderPass;
         VkPipelineLayout m_pipelineLayout;
         VkPipeline       m_graphicsPipeline;
+
+        std::vector<VkFramebuffer> m_swapChainFramebuffers;
     };
 }
 

@@ -245,6 +245,11 @@ namespace logik
 
     Instance::~Instance()
     {
+        for (VkFramebuffer frameBuffer : m_swapChainFramebuffers)
+        {
+            vkDestroyFramebuffer(m_vkLogicalDevice, frameBuffer, nullptr);
+        }
+
         if (m_graphicsPipeline)
         {
             vkDestroyPipeline(m_vkLogicalDevice, m_graphicsPipeline, nullptr);
@@ -711,8 +716,32 @@ namespace logik
                 throw std::runtime_error("failed to create graphics pipeline!");
         }
 
+        m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
+		for (size_t i = 0; i < m_swapChainImageViews.size(); i++) 
+		{
+			VkImageView attachments[] = { m_swapChainImageViews[i] };
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = m_renderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = m_swapChainExtent.width;
+			framebufferInfo.height = m_swapChainExtent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(
+                m_vkLogicalDevice,
+                &framebufferInfo,
+                nullptr,
+                &m_swapChainFramebuffers[i]) != VK_SUCCESS) 
+            {
+				throw std::runtime_error("failed to create framebuffer!");
+			}
+		}
+
         // TODO: 
-        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
         //
 
         return true;
