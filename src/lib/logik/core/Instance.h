@@ -23,6 +23,8 @@ namespace logik
         WindowPtr CreateWindow(
             uint32_t width, uint32_t height, const std::string& title);
 
+        void DrawFrame();
+
     private:
         VkInstance       m_vkInstance;
         VkPhysicalDevice m_vkPhysicalDevice;
@@ -54,6 +56,10 @@ namespace logik
         VkPipeline       m_graphicsPipeline;
 
         std::vector<VkFramebuffer> m_swapChainFramebuffers;
+
+        VkCommandPool    m_commandPool;
+
+        std::vector<VkCommandBuffer> m_commandBuffers;
     };
 }
 

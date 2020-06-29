@@ -128,7 +128,8 @@ namespace logik
           m_fragShaderModule(VK_NULL_HANDLE),
           m_pipelineLayout(VK_NULL_HANDLE),
           m_renderPass(VK_NULL_HANDLE),
-          m_graphicsPipeline(VK_NULL_HANDLE)
+          m_graphicsPipeline(VK_NULL_HANDLE),
+          m_commandPool(VK_NULL_HANDLE)
     {
         if (const int Result = glfwInit(); Result != GLFW_TRUE)
         {
@@ -245,6 +246,11 @@ namespace logik
 
     Instance::~Instance()
     {
+        if (m_commandPool)
+        {
+            vkDestroyCommandPool(m_vkLogicalDevice, m_commandPool, nullptr);
+        }
+
         for (VkFramebuffer frameBuffer : m_swapChainFramebuffers)
         {
             vkDestroyFramebuffer(m_vkLogicalDevice, frameBuffer, nullptr);
@@ -716,6 +722,9 @@ namespace logik
                 throw std::runtime_error("failed to create graphics pipeline!");
         }
 
+        //
+        // Finally create them swap chain framebuffers
+        //
         m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
 		for (size_t i = 0; i < m_swapChainImageViews.size(); i++) 
 		{
@@ -740,11 +749,103 @@ namespace logik
 			}
 		}
 
+        //
+        // Command pools
+        //
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.queueFamilyIndex = m_graphicsQueueIndex;
+        poolInfo.flags = 0; // Optional
+
+        if (vkCreateCommandPool(
+            m_vkLogicalDevice,
+            &poolInfo,
+            nullptr,
+            &m_commandPool) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("failed to create command pool!");
+        }
+
+        //
+        // Command buffers
+        //
+        m_commandBuffers.resize(m_swapChainFramebuffers.size());
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = m_commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount =
+            static_cast<uint32_t>(m_commandBuffers.size());
+
+        if (vkAllocateCommandBuffers(
+            m_vkLogicalDevice,
+            &allocInfo,
+            m_commandBuffers.data()) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("failed to allocate command buffers!");
+        }
+
+        //
+        // Set up the draw commands.
+        //
+        for (size_t i = 0; i < m_commandBuffers.size(); i++) 
+        {
+            VkCommandBufferBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = 0; // Optional
+            beginInfo.pInheritanceInfo = nullptr; // Optional
+
+            if (vkBeginCommandBuffer(
+                m_commandBuffers[i],
+                &beginInfo) != VK_SUCCESS) 
+            {
+                throw std::runtime_error("failed to begin recording command buffer!");
+            }
+
+            VkRenderPassBeginInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = m_renderPass;
+            renderPassInfo.framebuffer = m_swapChainFramebuffers[i];
+            renderPassInfo.renderArea.offset = {0, 0};
+            renderPassInfo.renderArea.extent = swapChainExtent;
+
+            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            renderPassInfo.clearValueCount = 1;
+            renderPassInfo.pClearValues = &clearColor;
+
+            vkCmdBeginRenderPass(
+                m_commandBuffers[i],
+                &renderPassInfo,
+                VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(
+                m_commandBuffers[i],
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_graphicsPipeline);
+            vkCmdDraw(
+                commandBuffers[i],
+                3, // Vertex count
+                1, // Instance count
+                0, // First vertex
+                0);// First instance
+            vkCmdEndRenderPass(m_commandBuffers[i]);
+            if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) 
+            {
+                throw std::runtime_error("failed to record command buffer!");
+            }
+        }
+
+        //
         // TODO: 
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
         //
 
         return true;
+    }
+
+    void Instance::DrawFrame()
+    {
+        // TODO
     }
 }
 
