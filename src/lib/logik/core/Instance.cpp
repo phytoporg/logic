@@ -808,7 +808,7 @@ namespace logik
             renderPassInfo.renderPass = m_renderPass;
             renderPassInfo.framebuffer = m_swapChainFramebuffers[i];
             renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = swapChainExtent;
+            renderPassInfo.renderArea.extent = m_swapChainExtent;
 
             VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
             renderPassInfo.clearValueCount = 1;
@@ -823,7 +823,7 @@ namespace logik
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 m_graphicsPipeline);
             vkCmdDraw(
-                commandBuffers[i],
+                m_commandBuffers[i],
                 3, // Vertex count
                 1, // Instance count
                 0, // First vertex
