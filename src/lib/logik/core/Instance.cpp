@@ -886,11 +886,6 @@ namespace logik
                     "Failed to create render finished semaphore");
         }
 
-        //
-        // TODO: 
-        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
-        //
-
         return true;
     }
 

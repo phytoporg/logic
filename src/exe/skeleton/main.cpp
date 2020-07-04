@@ -6,10 +6,10 @@ int main()
 
     logik::WindowPtr spWindow = instance.CreateWindow(640, 480, "skeleton");
     spWindow->PollEvents(
-            [&instance]()
-            {
-                instance.DrawFrame();
-            });
+        [&instance]()
+        {
+            instance.DrawFrame();
+        });
 
     return 0;
 }
