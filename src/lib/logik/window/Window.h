@@ -8,6 +8,7 @@
 
 #include <string>
 #include <memory>
+#include <functional>
 
 struct GLFWwindow;
 
@@ -18,7 +19,7 @@ namespace logik
     public:
         ~Window();
 
-        void PollEvents();
+        void PollEvents(std::function<void()> fnTick);
         GLFWwindow* GetWindow();
 
     private:

@@ -23,11 +23,12 @@ namespace logik
         m_pWindow = nullptr;
     }
 
-    void Window::PollEvents()
+    void Window::PollEvents(std::function<void()> fnTick)
     {
         while(!glfwWindowShouldClose(m_pWindow)) 
         {
             glfwPollEvents();
+            fnTick();
         }
     }
 

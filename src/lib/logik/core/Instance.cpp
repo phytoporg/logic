@@ -129,7 +129,9 @@ namespace logik
           m_pipelineLayout(VK_NULL_HANDLE),
           m_renderPass(VK_NULL_HANDLE),
           m_graphicsPipeline(VK_NULL_HANDLE),
-          m_commandPool(VK_NULL_HANDLE)
+          m_commandPool(VK_NULL_HANDLE),
+          m_imageAvailableSemaphore(VK_NULL_HANDLE),
+          m_renderFinishedSemaphore(VK_NULL_HANDLE)
     {
         if (const int Result = glfwInit(); Result != GLFW_TRUE)
         {
@@ -246,6 +248,18 @@ namespace logik
 
     Instance::~Instance()
     {
+        if (m_imageAvailableSemaphore)
+        {
+            vkDestroySemaphore(
+                m_vkLogicalDevice, m_renderFinishedSemaphore, nullptr);
+        }
+
+        if (m_imageAvailableSemaphore)
+        {
+            vkDestroySemaphore(
+                m_vkLogicalDevice, m_imageAvailableSemaphore, nullptr);
+        }
+
         if (m_commandPool)
         {
             vkDestroyCommandPool(m_vkLogicalDevice, m_commandPool, nullptr);
@@ -675,12 +689,22 @@ namespace logik
         //
         // Create the render pass
         //
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 1;
 		renderPassInfo.pAttachments = &colorAttachment;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
 
 		if (vkCreateRenderPass(
             m_vkLogicalDevice,
@@ -836,8 +860,35 @@ namespace logik
         }
 
         //
+        // Create semaphores
+        //
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(
+            m_vkLogicalDevice,
+            &semaphoreInfo,
+            nullptr,
+            &m_imageAvailableSemaphore) != VK_SUCCESS)
+        {
+            throw std::runtime_error(
+                    "Failed to create image available semaphore");
+        }
+
+        if (vkCreateSemaphore(
+            m_vkLogicalDevice,
+            &semaphoreInfo,
+            nullptr,
+            &m_renderFinishedSemaphore) != VK_SUCCESS)
+        {
+            throw std::runtime_error(
+                    "Failed to create render finished semaphore");
+        }
+
+        //
         // TODO: 
-        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
         //
 
         return true;
@@ -845,7 +896,53 @@ namespace logik
 
     void Instance::DrawFrame()
     {
-        // TODO
+        uint32_t imageIndex;
+        vkAcquireNextImageKHR(
+            m_vkLogicalDevice,
+            m_swapChain,
+            UINT64_MAX,
+            m_imageAvailableSemaphore,
+            VK_NULL_HANDLE,
+            &imageIndex);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+        VkPipelineStageFlags waitStages[] =
+            { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
+
+        VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        if (vkQueueSubmit(
+            m_vkGraphicsQueue,
+            1,
+            &submitInfo,
+            VK_NULL_HANDLE) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("Failed to submit draw command buffer");
+        }
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapChains[] = { m_swapChain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pResults = nullptr; // Optional
+
+        vkQueuePresentKHR(m_vkPresentQueue, &presentInfo);
     }
 }
 

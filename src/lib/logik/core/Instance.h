@@ -60,6 +60,9 @@ namespace logik
         VkCommandPool    m_commandPool;
 
         std::vector<VkCommandBuffer> m_commandBuffers;
+
+        VkSemaphore m_imageAvailableSemaphore;
+        VkSemaphore m_renderFinishedSemaphore;
     };
 }
 
